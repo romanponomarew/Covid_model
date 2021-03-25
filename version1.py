@@ -7,8 +7,11 @@ DAYS_BEFORE_HOSPITALIZATION = [3, 15]
 RECOVERY_DAYS = [15, 45]  # Время проведенное в больнице
 WEEKS = 1  # Simulation time in weeks
 SIM_TIME = WEEKS * 7 * 24  # Simulation time in minutes
-
+time_of_day = "day"  # night
 count_days = 0
+current_time = 0
+time_now = 0
+
 
 class Citizen:
     def __init__(self, number, env):
@@ -30,10 +33,9 @@ class Citizen:
         :return:
         """
         print("-----------")
-        print(f"Человек({self.number}) сейчас на работе, время-{self.env.now}")
-        # yield env.timeout(value=9)
+        print(f"Человек({self.number}) сейчас на работе, время симуляции-{self.env.now}")
         yield self.env.timeout(9)
-        print(f"Человек({self.number}) закончил работать, время-{env.now}")
+        print(f"Человек({self.number}) закончил работать, время симуляции-{env.now}")
         print("+++++++++++")
 
     def use_public_transport(self):
@@ -42,23 +44,23 @@ class Citizen:
         :return:
         """
         print("-----------")
-        print(f"Человек({self.number}) сейчас в общественном транспорте, время-{env.now}")
+        print(f"Человек({self.number}) сейчас в общественном транспорте, время симуляции-{env.now}")
         # yield env.timeout(value=1.5)
         travel_time = random.uniform(0.5, 1.5)
         print(f"Время поездки человека({self.number}) = {travel_time}")
         yield self.env.timeout(travel_time)
-        print(f"Человек({self.number}) вышел из общественного транспорта, время-{env.now}")
+        print(f"Человек({self.number}) вышел из общественного транспорта, время симуляции-{env.now}")
         print("+++++++++++")
 
     def go_to_shop(self):
         """
-        Находится в магазине от 10 минут до часа
+        Находится в магазине от 10 минут до полтора часа
         :return:
         """
         print("-----------")
         print(f"Человек({self.number}) сейчас в магазине, время-{env.now}")
         # yield env.timeout(value=1.5)
-        time_for_shopping = random.uniform(0.16, 1)
+        time_for_shopping = random.uniform(0.16, 1.5)
         print(f"Человек({self.number}) провел в магазине время - {time_for_shopping}")
         yield self.env.timeout(time_for_shopping)
         print(f"Человек({self.number}) вышел из магазина, время-{env.now}")
@@ -67,24 +69,17 @@ class Citizen:
     def go_to_fun_places(self):
         """
         Находится в кинотеатре, ресторане итд
-        от 1 до 2 часов
+        от 1 до 2.5 часов
         :return:
         """
         print("-----------")
         print(f"Человек({self.number}) сейчас в торговом центре(кинотеатр итд), время-{env.now}")
         # yield env.timeout(value=1.5)
-        time_for_shopping = random.uniform(0.16, 1)
+        time_for_shopping = random.uniform(1, 2.5)
         print(f"Человек({self.number}) провел в торговом центре время - {time_for_shopping}")
         yield self.env.timeout(time_for_shopping)
         print(f"Человек({self.number}) вышел из торгового центра, время-{env.now}")
         print("+++++++++++")
-
-    def sleep(self):
-        """
-        Нахождение дома в тесение
-        :return:
-        """
-        pass
 
     def _get_infected(self):
         """
@@ -101,29 +96,27 @@ class Citizen:
         probability = 40
         self.health_status = random.choices(["healthy", "ill"], weights=[100, 100 - probability])
 
-    def time(self):
-        print()
-        print("Время сейчас=", self.env.now)
-        print()
-        if env.now == 24:
-            print("1 sutki")
-        if env.now == 0:
-            print("=" * 10 + "День1" + "=" * 10)
-        if env.now % 24 == 0:
-            print("=" * 10 + "Следующий день" + "=" * 10)
-        # yield env.timeout(1)  # Для того чтобы можно было вызвать как генератор
-
-
     def run(self):
-        # yield env.process(calendar(env))
+        global current_time
         while True:
-            # yield self.env.process(self.time())
+            if time_now == 7:  # Сьездить на работу и вернутся с нее
+                start_time = self.env.now
+                print(f"start_time(время симуляции) человека№{self.number}=", start_time)
+                yield self.env.process(self.use_public_transport())
+                yield self.env.process(self.going_to_work())
+                yield self.env.process(self.use_public_transport())
+                end_time = self.env.now
+                print(f"end_time(время симуляции) человека№({self.number})=", end_time)
+                print(f"После возвращения с работы на часах человека({self.number})={time_now} часов")
+                if 17 <= time_now <= 19:
+                    yield self.env.process(self.go_to_fun_places())
+                    if random.randint(1, 2) == 1:
+                        yield self.env.process(self.go_to_shop())
+                    yield self.env.process(self.use_public_transport())
 
-            yield self.env.process(self.use_public_transport())
-            yield self.env.process(self.going_to_work())
-            yield self.env.process(self.use_public_transport())
-            # yield env.process(calendar(env))  # Конец дня
-            yield self.env.timeout(1)  # Для того чтобы можно было вызвать как генератор
+                    print(f"После развлечений и магазина(возможно) на часах человека({self.number})={time_now} часов")
+
+            yield self.env.timeout(0.0001)  # Для того чтобы можно было вызвать как генератор
 
 
 class Building:
@@ -173,19 +166,21 @@ class PublicTransport(Building):
     def __init__(self):
         super().__init__()
 
-# def calendar2(env):
-#     global count_days
-#     yield env.timeout(24)  # Для того чтобы можно было вызвать как генератор
-#     count_days += 1
-#     cprint("=" * 25 + f"Следующий день №{count_days}" + "=" * 25, "green")
 
 def calendar(env):
+    global time_now
     global count_days
     while True:
-        yield env.timeout(24)  # Для того чтобы можно было вызвать как генератор
-        count_days += 1
-        cprint("=" * 25 + f"Следующий день №{count_days}" + "=" * 25, "green")
-
+        print("Сейчас 7утра, время симуляции=", env.now)
+        time_now = 7
+        while time_now < 22:
+            yield env.timeout(1)
+            time_now += 1
+        if time_now >= 22:
+            print("Наступила ночь, время симуляции =", env.now)
+            yield env.timeout(9)
+            count_days += 1
+            cprint("=" * 25 + f"Следующий день №{count_days}" + "=" * 25, "green")
 
 
 ##########################
