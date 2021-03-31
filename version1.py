@@ -25,7 +25,7 @@ class Citizen:
         self.health_status = "healthy"  # infected
         self.antibodies = 0  # Если переболел - больше 0, заболеть не может
         self.in_hospital = False
-        self.location = "work"  # shop/fun_places/public_transport/hospital
+        # self.location = "work"  # shop/fun_places/public_transport/hospital
         self.work = work_type  # office
         for work_building in city_works:
             if self.work == work_building.type_name:
@@ -53,10 +53,12 @@ class Citizen:
         public_transport_now = random.choice(city_transport)
         print(f"Человек({self.number}) сейчас в общественном транспорте, время симуляции-{env.now}")
         public_transport_now.fullness_of_people[self.health_status] += 1
+        public_transport_now.people_in_building_now.append(self)
         travel_time = random.uniform(0.5, 1.5)
         print(f"Время поездки человека({self.number}) = {travel_time}")
         yield self.env.timeout(travel_time)
         public_transport_now.fullness_of_people[self.health_status] -= 1
+        public_transport_now.people_in_building_now.remove(self)
         print(f"Человек({self.number}) вышел из общественного транспорта, время симуляции-{env.now}")
         print("+++++++++++")
 
@@ -69,10 +71,12 @@ class Citizen:
         shop_now = random.choice(city_shops)
         print(f"Человек({self.number}) сейчас в магазине, время-{env.now}")
         shop_now.fullness_of_people[self.health_status] += 1
+        shop_now.people_in_building_now.append(self)
         time_for_shopping = random.uniform(0.16, 1.5)
         print(f"Человек({self.number}) провел в магазине время - {time_for_shopping}")
         yield self.env.timeout(time_for_shopping)
         shop_now.fullness_of_people[self.health_status] -= 1
+        shop_now.people_in_building_now.remove(self)
         print(f"Человек({self.number}) вышел из магазина, время-{env.now}")
         print("+++++++++++")
 
@@ -87,9 +91,11 @@ class Citizen:
         print(f"Человек({self.number}) сейчас в торговом центре(кинотеатр итд), время-{env.now}")
         time_for_fun = random.uniform(1, 2.5)
         fun_place_now.fullness_of_people[self.health_status] += 1
+        fun_place_now.people_in_building_now.append(self)
         print(f"Человек({self.number}) провел в торговом центре время - {time_for_fun}")
         yield self.env.timeout(time_for_fun)
         fun_place_now.fullness_of_people[self.health_status] -= 1
+        fun_place_now.people_in_building_now.remove(self)
         print(f"Человек({self.number}) вышел из торгового центра, время-{env.now}")
         print("+++++++++++")
 
@@ -100,13 +106,24 @@ class Citizen:
         """
         pass
 
+    # def chance_to_infected(self):
+    #     """
+    #     Если в помещении больной человек, есть вероятность заразиться
+    #     :return:
+    #     """
+    #     probability = 40
+    #     self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
+
     def chance_to_infected(self):
         """
         Если в помещении больной человек, есть вероятность заразиться
         :return:
         """
-        probability = 40
-        self.health_status = random.choices(["healthy", "ill"], weights=[100, 100 - probability])
+        chance = 40
+        probability = random.randint(0, 101)
+        # self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
+        if probability > chance:
+            self.health_status = "infected"
 
     def run(self):
         global current_time
@@ -140,6 +157,7 @@ class Building:
         self.fullness_of_people = {"healthy": 0, "infected": 0}
         self.amount_of_people = sum(self.fullness_of_people.values())
         self.type_name = type_name
+        self.people_in_building_now = []
 
 
 class Work(Building):
@@ -224,6 +242,12 @@ def location_checking(env):
                         "\t" + f"В локации {location.type_name} есть зараженные({location.fullness_of_people['infected']}) !!!",
                         "red")
                     # TODO: Вызвать функцию заражения здоровых людей
+                    for people in location.people_in_building_now:
+                        print(f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
+                        if people.health_status != "infected":
+                            people.chance_to_infected()
+                            print(f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
+
         yield env.timeout(time_for_checking)  # Проверяем каждые 20 минут
 
 
