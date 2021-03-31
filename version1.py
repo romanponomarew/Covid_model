@@ -156,8 +156,9 @@ class Shop(Building):
     Класс магазинов
     """
 
-    def __init__(self):
+    def __init__(self, name):
         super().__init__()
+        self.name = name
 
 
 class FunPlaces(Building):
@@ -199,14 +200,50 @@ def calendar(env):
 def transport_checking(env):
     while True:
         for transport in city_transport:
-            # print("transport.fullness_of_people=", transport.fullness_of_people["healthy"])
-            # print("transport.amount_of_people=", transport.amount_of_people)
-            if transport.fullness_of_people['healthy'] > 1:
-                # print(f"Скопление людей в траспорте- {transport.type_of_transport}")
-                # cprint("=" * 25 + f"Скопление людей({transport.amount_of_people}) в траспорте- {transport.type_of_transport}" + "=" * 25, "red")
-                cprint("=" * 25 + f"Скопление людей({transport.fullness_of_people['healthy']}) в траспорте- {transport.type_of_transport}" + "=" * 25,
+            quantity_of_people = sum(transport.fullness_of_people.values())
+            if quantity_of_people > 1:
+                cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в траспорте- {transport.type_of_transport}" + "=" * 25,
                     "red")
+                cprint("\t" + f"Среди них ({transport.fullness_of_people['healthy']}) здоровых людей в траспорте", "red")
+                cprint("\t" + f"Среди них ({transport.fullness_of_people['infected']}) зараженных людей в траспорте",
+                       "red")
         yield env.timeout(0.5)  # Проверяем каждые полчаса
+
+def work_checking(env):
+    while True:
+        for work_building in city_works:
+            quantity_of_people = sum(work_building.fullness_of_people.values())
+            if quantity_of_people > 1:
+                cprint("=" * 25 + f"Скопление людей({quantity_of_people}) на работе- {work_building.name_of_work}" + "=" * 25,
+                    "red")
+                cprint("\t" + f"Среди них ({work_building.fullness_of_people['healthy']}) здоровых людей в траспорте", "red")
+                cprint("\t" + f"Среди них ({work_building.fullness_of_people['infected']}) зараженных людей в траспорте",
+                       "red")
+        yield env.timeout(2)  # Проверяем каждые два часа
+
+def shop_checking(env):
+    while True:
+        for shop in city_shops:
+            quantity_of_people = sum(shop.fullness_of_people.values())
+            if quantity_of_people > 1:
+                cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в магазине- {shop.name}" + "=" * 25,
+                    "red")
+                cprint("\t" + f"Среди них ({shop.fullness_of_people['healthy']}) здоровых людей в магазине", "red")
+                cprint("\t" + f"Среди них ({shop.fullness_of_people['infected']}) зараженных людей в магазине",
+                       "red")
+        yield env.timeout(0.33)  # Проверяем каждые 20 минут
+
+def fun_places_checking(env):
+    while True:
+        for fun_place in city_fun_places:
+            quantity_of_people = sum(fun_place.fullness_of_people.values())
+            if quantity_of_people > 1:
+                cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в торговом центре- {fun_place.type_name}" + "=" * 25,
+                    "red")
+                cprint("\t" + f"Среди них ({fun_place.fullness_of_people['healthy']}) здоровых людей в в торговом центре", "red")
+                cprint("\t" + f"Среди них ({fun_place.fullness_of_people['infected']}) зараженных людей в в торговом центре",
+                       "red")
+        yield env.timeout(0.5)  # Проверяем каждые 20 минут
 
 ##########################
 # env = simpy.Environment()
@@ -224,9 +261,9 @@ metro1 = PublicTransport(type_of_transport="metro")
 metro2 = PublicTransport(type_of_transport="metro")
 city_transport = [bus1, bus2, metro1, metro2]
 ############# Магазины ###################
-pyaterochka = Shop()
-magnit = Shop()
-perekrestok = Shop()
+pyaterochka = Shop(name="Пятерочка")
+magnit = Shop(name="Магнит")
+perekrestok = Shop(name="Перекресток")
 city_shops = [pyaterochka, magnit, perekrestok]
 ############# Развлекательные места ###################
 # cinema, food_court, bowling
@@ -250,6 +287,9 @@ env.process(human6.run())
 city_humans = [human1, human2, human3, human4, human5, human6]
 ############# Процессы ###################
 env.process(transport_checking(env))
+env.process(work_checking(env))
+env.process(shop_checking(env))
+env.process(fun_places_checking(env))
 
 
 
