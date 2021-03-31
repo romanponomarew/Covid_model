@@ -200,16 +200,30 @@ def calendar(env):
 
 
 def location_checking(env):
+    count_checking_work = 0
     while True:
         time_for_checking = 0.33
         for location in all_city_places:
+            if isinstance(location, Work):
+                count_checking_work += 1
+                if count_checking_work <= 20:
+                    continue
+                else:
+                    print("Проверяем работу")
+                    count_checking_work = 0
+                    # Проверяем количество людей на работе каждые 2 часа
             quantity_of_people = sum(location.fullness_of_people.values())
             if quantity_of_people > 1:
                 cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в {location.type_name}" + "=" * 25,
-                    "red")
-                cprint("\t" + f"Среди них ({location.fullness_of_people['healthy']}) здоровых людей в {location.type_name}", "red")
+                    "yellow")
+                cprint("\t" + f"Среди них ({location.fullness_of_people['healthy']}) здоровых людей в {location.type_name}", "yellow")
                 cprint("\t" + f"Среди них ({location.fullness_of_people['infected']}) зараженных людей в {location.type_name}",
-                       "red")
+                       "yellow")
+                if location.fullness_of_people['infected'] > 0:
+                    cprint(
+                        "\t" + f"В локации {location.type_name} есть зараженные({location.fullness_of_people['infected']}) !!!",
+                        "red")
+                    # TODO: Вызвать функцию заражения здоровых людей
         yield env.timeout(time_for_checking)  # Проверяем каждые 20 минут
 
 
@@ -248,6 +262,7 @@ env.process(human1.run())
 human2 = Citizen(number=2, work_type="office", env=env)
 env.process(human2.run())
 human3 = Citizen(number=3, work_type="office", env=env)
+human3.health_status = "infected"
 env.process(human3.run())
 human4 = Citizen(number=4, work_type="office", env=env)
 env.process(human4.run())
