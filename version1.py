@@ -114,12 +114,20 @@ class Citizen:
     #     probability = 40
     #     self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
 
-    def chance_to_infected(self):
+    def chance_to_infected(self, infected_man):
         """
         Если в помещении больной человек, есть вероятность заразиться
         :return:
         """
-        chance = 40
+        print(f"Здоровый человек({self.number}) носит маску? - ({self.wearing_mask})")
+        print(f"Больной человек({infected_man.number}) носит маску? - ({infected_man.wearing_mask})")
+        if self.wearing_mask or infected_man.wearing_mask:
+            chance = 22
+            if self.wearing_mask and infected_man.wearing_mask:
+                chance = 4
+        else:
+            chance = 40
+        print(f"Человек ({self.number}) может заразиться от ({infected_man.number}) с вероятностью = {chance}")
         probability = random.randint(0, 101)
         # self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
         if probability > chance:
@@ -233,20 +241,28 @@ def location_checking(env):
             quantity_of_people = sum(location.fullness_of_people.values())
             if quantity_of_people > 1:
                 cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в {location.type_name}" + "=" * 25,
-                    "yellow")
-                cprint("\t" + f"Среди них ({location.fullness_of_people['healthy']}) здоровых людей в {location.type_name}", "yellow")
-                cprint("\t" + f"Среди них ({location.fullness_of_people['infected']}) зараженных людей в {location.type_name}",
                        "yellow")
+                cprint(
+                    "\t" + f"Среди них ({location.fullness_of_people['healthy']}) здоровых людей в {location.type_name}",
+                    "yellow")
+                cprint(
+                    "\t" + f"Среди них ({location.fullness_of_people['infected']}) зараженных людей в {location.type_name}",
+                    "yellow")
                 if location.fullness_of_people['infected'] > 0:
                     cprint(
                         "\t" + f"В локации {location.type_name} есть зараженные({location.fullness_of_people['infected']}) !!!",
                         "red")
-                    # TODO: Вызвать функцию заражения здоровых людей
                     for people in location.people_in_building_now:
-                        print(f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
-                        if people.health_status != "infected":
-                            people.chance_to_infected()
-                            print(f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
+                        if people.health_status == "infected":
+                            infected_man = people
+                            for people in location.people_in_building_now:
+                                # print(f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
+                                if people.health_status != "infected":
+                                    print(
+                                        f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
+                                    people.chance_to_infected(infected_man=infected_man)
+                                    print(
+                                        f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
 
         yield env.timeout(time_for_checking)  # Проверяем каждые 20 минут
 
@@ -298,7 +314,5 @@ city_humans = [human1, human2, human3, human4, human5, human6]
 ############# Процессы ###################
 
 env.process(location_checking(env))
-
-
 
 env.run(until=SIM_TIME)
