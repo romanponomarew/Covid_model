@@ -1,16 +1,19 @@
 import random
+from collections import defaultdict
+
 import simpy
 from termcolor import cprint
 
 TOTAL_NUMBER_OF_CITIZENS = 10000
 DAYS_BEFORE_HOSPITALIZATION = [3, 15]
 RECOVERY_DAYS = [15, 45]  # Время проведенное в больнице
-WEEKS = 1  # Simulation time in weeks
+WEEKS = 6  # Simulation time in weeks
 SIM_TIME = WEEKS * 7 * 24  # Simulation time in minutes
 time_of_day = "day"  # night
 count_days = 1
 current_time = 0
 time_now = 0
+city_statisitics = defaultdict()
 
 
 class Citizen:
@@ -30,6 +33,9 @@ class Citizen:
         for work_building in city_works:
             if self.work == work_building.type_name:
                 self.work_building = work_building.fullness_of_people
+        self.days_before_moving_to_hospital = 0
+        self.days_staying_in_hospital = 0
+
 
     def going_to_work(self):
         """
@@ -132,26 +138,29 @@ class Citizen:
         # self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
         if probability > chance:
             self.health_status = "infected"
+            self.days_before_moving_to_hospital = random.randint(3, 15)  # выбираем для больного кол-во дней,
+            # которые ему нужны, чтобы оказаться в больнице
 
     def run(self):
         global current_time
         while True:
-            if time_now == 7:  # Сьездить на работу и вернутся с нее
-                start_time = self.env.now
-                print(f"start_time(время симуляции) человека№{self.number}=", start_time)
-                yield self.env.process(self.use_public_transport())
-                yield self.env.process(self.going_to_work())
-                yield self.env.process(self.use_public_transport())
-                end_time = self.env.now
-                print(f"end_time(время симуляции) человека№({self.number})=", end_time)
-                print(f"После возвращения с работы на часах человека({self.number})={time_now} часов")
-                if 17 <= time_now <= 19:
-                    yield self.env.process(self.go_to_fun_places())
-                    if random.randint(1, 2) == 1:
-                        yield self.env.process(self.go_to_shop())
+            if self.in_hospital is not True:
+                if time_now == 7:  # Сьездить на работу и вернутся с нее
+                    start_time = self.env.now
+                    print(f"start_time(время симуляции) человека№{self.number}=", start_time)
                     yield self.env.process(self.use_public_transport())
+                    yield self.env.process(self.going_to_work())
+                    yield self.env.process(self.use_public_transport())
+                    end_time = self.env.now
+                    print(f"end_time(время симуляции) человека№({self.number})=", end_time)
+                    print(f"После возвращения с работы на часах человека({self.number})={time_now} часов")
+                    if 17 <= time_now <= 19:
+                        yield self.env.process(self.go_to_fun_places())
+                        if random.randint(1, 2) == 1:
+                            yield self.env.process(self.go_to_shop())
+                        yield self.env.process(self.use_public_transport())
 
-                    print(f"После развлечений и магазина(возможно) на часах человека({self.number})={time_now} часов")
+                        print(f"После развлечений и магазина(возможно) на часах человека({self.number})={time_now} часов")
 
             yield self.env.timeout(0.0001)  # Для того чтобы можно было вызвать как генератор
 
@@ -208,6 +217,61 @@ class PublicTransport(Building):
         # self.type_of_transport = type_of_transport  # bus, metro
 
 
+def people_days_to_hospital():
+    """
+    Функция изменения кол-ва дней до помещения в больницу каждого из зараженных жильцов
+    :return:
+    """
+    for people in city_humans:
+        if people.days_before_moving_to_hospital != 0 and people.days_before_moving_to_hospital != 1:
+            people.days_before_moving_to_hospital -= 1
+        if people.days_before_moving_to_hospital == 1:
+            print(f"Человек ({people.number}) помещается в больницу в день №{count_days}")
+            people.days_before_moving_to_hospital -= 1
+            people.in_hospital = True
+            people.days_staying_in_hospital = random.randint(15, 45)
+
+
+def people_staying_in_hospital():
+    """
+        Функция изменения кол-ва дней до помещения в больницу каждого из зараженных жильцов
+        :return:
+    """
+    for people in city_humans:
+        if people.in_hospital is True:
+            if people.days_staying_in_hospital != 0 and people.days_staying_in_hospital != 1:
+                people.days_staying_in_hospital -= 1
+            if people.days_staying_in_hospital == 1:
+                print(f"Человек ({people.number}) выписывается из больницы в день №{count_days}")
+                people.days_staying_in_hospital -= 1
+                people.in_hospital = False
+                people.health_status = "healthy"
+
+
+def checking_hospital():
+    """
+    Сбор статистики на текущий день:
+      .Кол-во жителей
+      .Кол-во здоровых
+      .Кол-во больных
+      .Кол-во людей в больнице
+    """
+    global city_statisitics
+    city_statisitics[f"Day№{count_days}"] = {"total_people_in_city":0, "infected":0, "healthy":0, "people_in_hospital":0}
+    city_statisitics[f"Day№{count_days}"]["total_people_in_city"] = len(city_humans)
+    for people in city_humans:
+        city_statisitics[f"Day№{count_days}"][people.health_status] += 1
+        if people.in_hospital:
+            city_statisitics[f"Day№{count_days}"]["people_in_hospital"] += 1
+    cprint(f"В день №{count_days} в городе всего {city_statisitics[f'Day№{count_days}']['total_people_in_city']}, "
+          f"Среди них {city_statisitics[f'Day№{count_days}']['healthy']} здоровых,"
+          f"Среди них {city_statisitics[f'Day№{count_days}']['infected'] - city_statisitics[f'Day№{count_days}']['people_in_hospital']} больных,"
+           f"В больнице сейчас {city_statisitics[f'Day№{count_days}']['people_in_hospital']} человек", "red")
+
+
+
+
+
 def calendar(env):
     global time_now
     global count_days
@@ -221,6 +285,9 @@ def calendar(env):
         if time_now >= 22:
             print("Наступила ночь, время симуляции =", env.now)
             yield env.timeout(9)
+            people_days_to_hospital()
+            people_staying_in_hospital()
+            checking_hospital()
             count_days += 1
             cprint("=" * 25 + f"Следующий день №{count_days}" + "=" * 25, "green")
 
@@ -316,3 +383,4 @@ city_humans = [human1, human2, human3, human4, human5, human6]
 env.process(location_checking(env))
 
 env.run(until=SIM_TIME)
+print(city_statisitics)
