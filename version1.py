@@ -1,5 +1,6 @@
 import random
 from collections import defaultdict
+from pprint import pprint
 
 import simpy
 from termcolor import cprint
@@ -42,49 +43,49 @@ class Citizen:
         Находится на работе 9 часов
         :return:
         """
-        print("-----------")
-        print(f"Человек({self.number}) сейчас на работе, время симуляции-{self.env.now}")
+        # print("-----------")
+        # print(f"Человек({self.number}) сейчас на работе, время симуляции-{self.env.now}")
         self.work_building[self.health_status] += 1
         yield self.env.timeout(9)
         self.work_building[self.health_status] -= 1
-        print(f"Человек({self.number}) закончил работать, время симуляции-{env.now}")
-        print("+++++++++++")
+        # print(f"Человек({self.number}) закончил работать, время симуляции-{env.now}")
+        # print("+++++++++++")
 
     def use_public_transport(self):
         """
         Находится в общественном траснпорте от 30 минут то 1,5 часов
         :return:
         """
-        print("-----------")
+        # print("-----------")
         public_transport_now = random.choice(city_transport)
-        print(f"Человек({self.number}) сейчас в общественном транспорте, время симуляции-{env.now}")
+        # print(f"Человек({self.number}) сейчас в общественном транспорте, время симуляции-{env.now}")
         public_transport_now.fullness_of_people[self.health_status] += 1
         public_transport_now.people_in_building_now.append(self)
         travel_time = random.uniform(0.5, 1.5)
-        print(f"Время поездки человека({self.number}) = {travel_time}")
+        # print(f"Время поездки человека({self.number}) = {travel_time}")
         yield self.env.timeout(travel_time)
         public_transport_now.fullness_of_people[self.health_status] -= 1
         public_transport_now.people_in_building_now.remove(self)
-        print(f"Человек({self.number}) вышел из общественного транспорта, время симуляции-{env.now}")
-        print("+++++++++++")
+        # print(f"Человек({self.number}) вышел из общественного транспорта, время симуляции-{env.now}")
+        # print("+++++++++++")
 
     def go_to_shop(self):
         """
         Находится в магазине от 10 минут до полтора часа
         :return:
         """
-        print("-----------")
+        # print("-----------")
         shop_now = random.choice(city_shops)
-        print(f"Человек({self.number}) сейчас в магазине, время-{env.now}")
+        # print(f"Человек({self.number}) сейчас в магазине, время-{env.now}")
         shop_now.fullness_of_people[self.health_status] += 1
         shop_now.people_in_building_now.append(self)
         time_for_shopping = random.uniform(0.16, 1.5)
-        print(f"Человек({self.number}) провел в магазине время - {time_for_shopping}")
+        # print(f"Человек({self.number}) провел в магазине время - {time_for_shopping}")
         yield self.env.timeout(time_for_shopping)
         shop_now.fullness_of_people[self.health_status] -= 1
         shop_now.people_in_building_now.remove(self)
-        print(f"Человек({self.number}) вышел из магазина, время-{env.now}")
-        print("+++++++++++")
+        # print(f"Человек({self.number}) вышел из магазина, время-{env.now}")
+        # print("+++++++++++")
 
     def go_to_fun_places(self):
         """
@@ -92,18 +93,18 @@ class Citizen:
         от 1 до 2.5 часов
         :return:
         """
-        print("-----------")
+        # print("-----------")
         fun_place_now = random.choice(city_fun_places)
-        print(f"Человек({self.number}) сейчас в торговом центре(кинотеатр итд), время-{env.now}")
+        # print(f"Человек({self.number}) сейчас в торговом центре(кинотеатр итд), время-{env.now}")
         time_for_fun = random.uniform(1, 2.5)
         fun_place_now.fullness_of_people[self.health_status] += 1
         fun_place_now.people_in_building_now.append(self)
-        print(f"Человек({self.number}) провел в торговом центре время - {time_for_fun}")
+        # print(f"Человек({self.number}) провел в торговом центре время - {time_for_fun}")
         yield self.env.timeout(time_for_fun)
         fun_place_now.fullness_of_people[self.health_status] -= 1
         fun_place_now.people_in_building_now.remove(self)
-        print(f"Человек({self.number}) вышел из торгового центра, время-{env.now}")
-        print("+++++++++++")
+        # print(f"Человек({self.number}) вышел из торгового центра, время-{env.now}")
+        # print("+++++++++++")
 
     def _get_infected(self):
         """
@@ -125,15 +126,15 @@ class Citizen:
         Если в помещении больной человек, есть вероятность заразиться
         :return:
         """
-        print(f"Здоровый человек({self.number}) носит маску? - ({self.wearing_mask})")
-        print(f"Больной человек({infected_man.number}) носит маску? - ({infected_man.wearing_mask})")
+        # print(f"Здоровый человек({self.number}) носит маску? - ({self.wearing_mask})")
+        # print(f"Больной человек({infected_man.number}) носит маску? - ({infected_man.wearing_mask})")
         if self.wearing_mask or infected_man.wearing_mask:
             chance = 22
             if self.wearing_mask and infected_man.wearing_mask:
                 chance = 4
         else:
             chance = 40
-        print(f"Человек ({self.number}) может заразиться от ({infected_man.number}) с вероятностью = {chance}")
+        # print(f"Человек ({self.number}) может заразиться от ({infected_man.number}) с вероятностью = {chance}")
         probability = random.randint(0, 101)
         # self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
         if probability > chance:
@@ -147,20 +148,20 @@ class Citizen:
             if self.in_hospital is not True:
                 if time_now == 7:  # Сьездить на работу и вернутся с нее
                     start_time = self.env.now
-                    print(f"start_time(время симуляции) человека№{self.number}=", start_time)
+                    # print(f"start_time(время симуляции) человека№{self.number}=", start_time)
                     yield self.env.process(self.use_public_transport())
                     yield self.env.process(self.going_to_work())
                     yield self.env.process(self.use_public_transport())
                     end_time = self.env.now
-                    print(f"end_time(время симуляции) человека№({self.number})=", end_time)
-                    print(f"После возвращения с работы на часах человека({self.number})={time_now} часов")
+                    # print(f"end_time(время симуляции) человека№({self.number})=", end_time)
+                    # print(f"После возвращения с работы на часах человека({self.number})={time_now} часов")
                     if 17 <= time_now <= 19:
                         yield self.env.process(self.go_to_fun_places())
                         if random.randint(1, 2) == 1:
                             yield self.env.process(self.go_to_shop())
                         yield self.env.process(self.use_public_transport())
 
-                        print(f"После развлечений и магазина(возможно) на часах человека({self.number})={time_now} часов")
+                        # print(f"После развлечений и магазина(возможно) на часах человека({self.number})={time_now} часов")
 
             yield self.env.timeout(0.0001)  # Для того чтобы можно было вызвать как генератор
 
@@ -277,6 +278,9 @@ def calendar(env):
     global count_days
     cprint("=" * 25 + f"День №1" + "=" * 25, "green")
     while True:
+        if count_days == 1:
+            print("В начале дня статистика:")
+            checking_hospital()
         print("Сейчас 7утра, время симуляции=", env.now)
         time_now = 7
         while time_now < 22:
@@ -302,7 +306,7 @@ def location_checking(env):
                 if count_checking_work <= 20:
                     continue
                 else:
-                    print("Проверяем работу")
+                    # print("Проверяем работу")
                     count_checking_work = 0
                     # Проверяем количество людей на работе каждые 2 часа
             quantity_of_people = sum(location.fullness_of_people.values())
@@ -342,7 +346,8 @@ env.process(calendar(env))
 ############# Работа ###################
 office = Work(type_name="office")
 school = Work(type_name="school")
-city_works = [office, school]
+metro_work = Work(type_name="metro")
+city_works = [office, school, metro_work]
 ############# Транспорт ###################
 bus1 = PublicTransport(type_name="bus")
 bus2 = PublicTransport(type_name="bus")
@@ -364,23 +369,30 @@ city_fun_places = [cinema, food_court, bowling]
 all_city_places = city_fun_places + city_shops + city_works + city_transport
 print("all_city_places=", all_city_places)
 ############# Население ###################
-human1 = Citizen(number=1, work_type="school", env=env)
-env.process(human1.run())
-human2 = Citizen(number=2, work_type="office", env=env)
-env.process(human2.run())
-human3 = Citizen(number=3, work_type="office", env=env)
-human3.health_status = "infected"
-env.process(human3.run())
-human4 = Citizen(number=4, work_type="office", env=env)
-env.process(human4.run())
-human5 = Citizen(number=5, work_type="office", env=env)
-env.process(human5.run())
-human6 = Citizen(number=6, work_type="office", env=env)
-env.process(human6.run())
-city_humans = [human1, human2, human3, human4, human5, human6]
+# human1 = Citizen(number=1, work_type="school", env=env)
+# env.process(human1.run())
+# human2 = Citizen(number=2, work_type="office", env=env)
+# env.process(human2.run())
+# human3 = Citizen(number=3, work_type="office", env=env)
+# human3.health_status = "infected"
+# env.process(human3.run())
+# human4 = Citizen(number=4, work_type="office", env=env)
+# env.process(human4.run())
+# human5 = Citizen(number=5, work_type="office", env=env)
+# env.process(human5.run())
+# human6 = Citizen(number=6, work_type="office", env=env)
+# env.process(human6.run())
+# city_humans = [human1, human2, human3, human4, human5, human6]
+city_works_string = [city_work.type_name for city_work in city_works]
+city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in range(100)]
+for _ in range(5):
+    random.choice(city_humans).health_status = "infected"
+for human in city_humans:
+    env.process(human.run())
+
 ############# Процессы ###################
 
 env.process(location_checking(env))
 
 env.run(until=SIM_TIME)
-print(city_statisitics)
+pprint(city_statisitics)
