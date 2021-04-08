@@ -5,7 +5,7 @@ from pprint import pprint
 import simpy
 from termcolor import cprint
 
-TOTAL_NUMBER_OF_CITIZENS = 10000
+TOTAL_NUMBER_OF_CITIZENS = 10
 DAYS_BEFORE_HOSPITALIZATION = [3, 15]
 RECOVERY_DAYS = [15, 45]  # Время проведенное в больнице
 WEEKS = 6  # Simulation time in weeks
@@ -37,6 +37,9 @@ class Citizen:
         self.days_before_moving_to_hospital = 0
         self.days_staying_in_hospital = 0
 
+        self.sleep_now = False
+        self.activity_for_day = {"road_to_work": False, "work": False, "road_from_work": False, "shop": False, "road_to_home": False, "sleep": False}
+
 
     def going_to_work(self):
         """
@@ -44,11 +47,26 @@ class Citizen:
         :return:
         """
         # print("-----------")
-        # print(f"Человек({self.number}) сейчас на работе, время симуляции-{self.env.now}")
+        print(f"Человек({self.number}) сейчас на работе, время симуляции-{self.env.now}")
         self.work_building[self.health_status] += 1
         yield self.env.timeout(9)
         self.work_building[self.health_status] -= 1
-        # print(f"Человек({self.number}) закончил работать, время симуляции-{env.now}")
+        print(f"Человек({self.number}) закончил работать, время симуляции-{env.now}")
+        self.activity_for_day["work"] = True
+        # print("+++++++++++")
+
+    def go_to_sleep(self):
+        """
+        Спит 9 часов
+        :return:
+        """
+        # print("-----------")
+        # print(f"Человек({self.number}) лег спать, время симуляции-{self.env.now}")
+        self.sleep_now = True
+        yield self.env.timeout(9)
+        self.sleep_now = False
+        # print(f"Человек({self.number}) закончил спать, время симуляции-{env.now}")
+        self.activity_for_day["sleep"] = True
         # print("+++++++++++")
 
     def use_public_transport(self):
@@ -84,6 +102,7 @@ class Citizen:
         yield self.env.timeout(time_for_shopping)
         shop_now.fullness_of_people[self.health_status] -= 1
         shop_now.people_in_building_now.remove(self)
+        self.activity_for_day["shop"] = True
         # print(f"Человек({self.number}) вышел из магазина, время-{env.now}")
         # print("+++++++++++")
 
@@ -142,24 +161,43 @@ class Citizen:
             self.days_before_moving_to_hospital = random.randint(3, 15)  # выбираем для больного кол-во дней,
             # которые ему нужны, чтобы оказаться в больнице
 
+
     def run(self):
         global current_time
         while True:
             if self.in_hospital is not True:
-                if time_now == 7:  # Сьездить на работу и вернутся с нее
-                    start_time = self.env.now
+                if self.sleep_now == False:
+                    # if time_now == 7:  # Сьездить на работу и вернутся с нее
+                    # start_time = self.env.now
                     # print(f"start_time(время симуляции) человека№{self.number}=", start_time)
-                    yield self.env.process(self.use_public_transport())
-                    yield self.env.process(self.going_to_work())
-                    yield self.env.process(self.use_public_transport())
-                    end_time = self.env.now
+                    if not self.activity_for_day["sleep"]:
+                        yield self.env.process(self.go_to_sleep())
+                    if not self.activity_for_day["road_to_work"]:
+                        yield self.env.process(self.use_public_transport())
+                        self.activity_for_day["road_to_work"] = True
+                    if not self.activity_for_day["work"]:
+                        yield self.env.process(self.going_to_work())
+                    if not self.activity_for_day["road_from_work"]:
+                        yield self.env.process(self.use_public_transport())
+                        self.activity_for_day["road_from_work"] = True
+
+                    # end_time = self.env.now
                     # print(f"end_time(время симуляции) человека№({self.number})=", end_time)
                     # print(f"После возвращения с работы на часах человека({self.number})={time_now} часов")
-                    if 17 <= time_now <= 19:
-                        yield self.env.process(self.go_to_fun_places())
-                        if random.randint(1, 2) == 1:
-                            yield self.env.process(self.go_to_shop())
-                        yield self.env.process(self.use_public_transport())
+                    # if 17 <= time_now <= 19:
+                    yield self.env.process(self.go_to_fun_places())
+                    if random.randint(1, 2) == 1:
+                        yield self.env.process(self.go_to_shop())
+                    yield self.env.process(self.use_public_transport())
+                    self.activity_for_day["road_to_home"] = True
+                    if self.activity_for_day["road_to_home"]:
+                        for activity in self.activity_for_day:
+                            self.activity_for_day[str(activity)] = False
+                    # if not self.activity_for_day["sleep"]:
+                    #     yield self.env.process(self.go_to_sleep())
+                    #     for activity in self.activity_for_day:
+                    #         self.activity_for_day[str(activity)] = False
+
 
                         # print(f"После развлечений и магазина(возможно) на часах человека({self.number})={time_now} часов")
 
@@ -287,7 +325,7 @@ def calendar(env):
             yield env.timeout(1)
             time_now += 1
         if time_now >= 22:
-            print("Наступила ночь, время симуляции =", env.now)
+            # print("Наступила ночь, время симуляции =", env.now)
             yield env.timeout(9)
             people_days_to_hospital()
             people_staying_in_hospital()
@@ -329,11 +367,11 @@ def location_checking(env):
                             for people in location.people_in_building_now:
                                 # print(f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
                                 if people.health_status != "infected":
-                                    print(
-                                        f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
+                                    # print(
+                                    #     f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
                                     people.chance_to_infected(infected_man=infected_man)
-                                    print(
-                                        f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
+                                    # print(
+                                    #     f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
 
         yield env.timeout(time_for_checking)  # Проверяем каждые 20 минут
 
@@ -384,7 +422,7 @@ print("all_city_places=", all_city_places)
 # env.process(human6.run())
 # city_humans = [human1, human2, human3, human4, human5, human6]
 city_works_string = [city_work.type_name for city_work in city_works]
-city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in range(100)]
+city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in range(TOTAL_NUMBER_OF_CITIZENS)]
 for _ in range(5):
     random.choice(city_humans).health_status = "infected"
 for human in city_humans:
