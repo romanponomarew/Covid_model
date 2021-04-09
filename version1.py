@@ -5,7 +5,7 @@ from pprint import pprint
 import simpy
 from termcolor import cprint
 
-TOTAL_NUMBER_OF_CITIZENS = 100
+TOTAL_NUMBER_OF_CITIZENS = 10000
 DAYS_BEFORE_HOSPITALIZATION = [3, 15]
 RECOVERY_DAYS = [15, 45]  # Время проведенное в больнице
 WEEKS = 6  # Simulation time in weeks
@@ -328,11 +328,11 @@ def calendar(env):
             cprint("=" * 25 + f"Следующий день №{count_days}" + "=" * 25, "green")
 
 
-def location_checking(env):
+def location_checking(env):  # TODO: Люди слишком быстро заражаются, возможно стоит добавить большее кол-во транспорта, работы итд, чтобы было меньше контактов с больными
     count_checking_work = 0
     while True:
         # print(f"Вызов функции location_checking во время ({env.now})")
-        time_for_checking = 0.33
+        time_for_checking = 0.5
         for location in all_city_places:
             if isinstance(location, Work):
                 count_checking_work += 1
@@ -374,8 +374,8 @@ def location_checking(env):
                                 # print(
                                 #     f"Человек({people.number}), статус-({people.health_status}) в здании({location.type_name}) с зараженными")
                                 people.chance_to_infected(infected_man=infected_man)
-                                print(
-                                    f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
+                                # print(
+                                #     f"Здоровый человек({people.number}) мог заболеть. Теперь его статус=({people.health_status})")
 
         yield env.timeout(time_for_checking)  # Проверяем каждые 20 минут
 
@@ -386,21 +386,31 @@ env = simpy.rt.RealtimeEnvironment(initial_time=0, factor=0.001, strict=False)
 env.process(calendar(env))
 
 ############# Работа ###################
-office = Work(type_name="office")
-school = Work(type_name="school")
-metro_work = Work(type_name="metro")
-city_works = [office, school, metro_work]
+office1 = Work(type_name="office")
+office2 = Work(type_name="office")
+school1 = Work(type_name="school")
+school2 = Work(type_name="school")
+metro_work1 = Work(type_name="metro")
+metro_work2 = Work(type_name="metro")
+city_works = [office1, office2, school1, school2, metro_work1, metro_work2]
 ############# Транспорт ###################
 bus1 = PublicTransport(type_name="bus")
 bus2 = PublicTransport(type_name="bus")
+bus3 = PublicTransport(type_name="bus")
+bus4 = PublicTransport(type_name="bus")
 metro1 = PublicTransport(type_name="metro")
 metro2 = PublicTransport(type_name="metro")
-city_transport = [bus1, bus2, metro1, metro2]
+metro3 = PublicTransport(type_name="metro")
+metro4 = PublicTransport(type_name="metro")
+city_transport = [bus1, bus2, bus3, bus4, metro1, metro2, metro3, metro4]
 ############# Магазины ###################
-pyaterochka = Shop(type_name="Пятерочка")
-magnit = Shop(type_name="Магнит")
-perekrestok = Shop(type_name="Перекресток")
-city_shops = [pyaterochka, magnit, perekrestok]
+pyaterochka1 = Shop(type_name="Пятерочка")
+pyaterochka2 = Shop(type_name="Пятерочка")
+magnit1 = Shop(type_name="Магнит")
+magnit2 = Shop(type_name="Магнит")
+perekrestok1 = Shop(type_name="Перекресток")
+perekrestok2 = Shop(type_name="Перекресток")
+city_shops = [pyaterochka1, pyaterochka2, magnit1, magnit2, perekrestok1, perekrestok2]
 ############# Развлекательные места ###################
 # cinema, food_court, bowling
 cinema = FunPlaces(type_name="cinema")
