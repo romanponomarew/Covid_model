@@ -332,7 +332,7 @@ def location_checking(env):  # TODO: Люди слишком быстро зар
     count_checking_work = 0
     while True:
         # print(f"Вызов функции location_checking во время ({env.now})")
-        time_for_checking = 0.5
+        time_for_checking = 1
         for location in all_city_places:
             if isinstance(location, Work):
                 count_checking_work += 1
@@ -344,8 +344,8 @@ def location_checking(env):  # TODO: Люди слишком быстро зар
                     # Проверяем количество людей на работе каждые 2 часа
             quantity_of_people = sum(location.fullness_of_people.values())
             # print(f"В локации ({location}) сейчас(время={env.now}) людей = {quantity_of_people}")
-            if quantity_of_people >1:
-                cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в {location.type_name}" + "=" * 25,
+            if quantity_of_people > 1:
+                cprint("=" * 25 + f"Скопление людей({quantity_of_people}) в {location}" + "=" * 25,
                        "yellow")
                 cprint(
                     "\t" + f"Среди них ({location.fullness_of_people['healthy']}) здоровых людей в {location.type_name}",
@@ -386,55 +386,28 @@ env = simpy.rt.RealtimeEnvironment(initial_time=0, factor=0.001, strict=False)
 env.process(calendar(env))
 
 ############# Работа ###################
-office1 = Work(type_name="office")
-office2 = Work(type_name="office")
-school1 = Work(type_name="school")
-school2 = Work(type_name="school")
-metro_work1 = Work(type_name="metro")
-metro_work2 = Work(type_name="metro")
-city_works = [office1, office2, school1, school2, metro_work1, metro_work2]
+office_works = [Work(type_name="office") for _ in range(2000)]
+school_works = [Work(type_name="school") for _ in range(1500)]
+metro_works = [Work(type_name="metro") for _ in range(1500)]
+city_works = office_works + school_works + metro_works
 ############# Транспорт ###################
-bus1 = PublicTransport(type_name="bus")
-bus2 = PublicTransport(type_name="bus")
-bus3 = PublicTransport(type_name="bus")
-bus4 = PublicTransport(type_name="bus")
-metro1 = PublicTransport(type_name="metro")
-metro2 = PublicTransport(type_name="metro")
-metro3 = PublicTransport(type_name="metro")
-metro4 = PublicTransport(type_name="metro")
-city_transport = [bus1, bus2, bus3, bus4, metro1, metro2, metro3, metro4]
+transport_bus = [PublicTransport(type_name="bus") for _ in range(1000)]
+transport_metro = [PublicTransport(type_name="metro") for _ in range(2000)]
+city_transport = transport_bus + transport_metro
 ############# Магазины ###################
-pyaterochka1 = Shop(type_name="Пятерочка")
-pyaterochka2 = Shop(type_name="Пятерочка")
-magnit1 = Shop(type_name="Магнит")
-magnit2 = Shop(type_name="Магнит")
-perekrestok1 = Shop(type_name="Перекресток")
-perekrestok2 = Shop(type_name="Перекресток")
-city_shops = [pyaterochka1, pyaterochka2, magnit1, magnit2, perekrestok1, perekrestok2]
+shop_pyaterochka = [Shop(type_name="Пятерочка") for _ in range(300)]
+shop_magnit = [Shop(type_name="Магнит") for _ in range(200)]
+shop_perekrestok = [Shop(type_name="Перекресток") for _ in range(150)]
+city_shops = shop_magnit + shop_perekrestok + shop_pyaterochka
 ############# Развлекательные места ###################
-# cinema, food_court, bowling
-cinema = FunPlaces(type_name="cinema")
-food_court = FunPlaces(type_name="food_court")
-bowling = FunPlaces(type_name="bowling")
-city_fun_places = [cinema, food_court, bowling]
+city_cinema = [FunPlaces(type_name="cinema") for _ in range(100)]
+city_food_court = [FunPlaces(type_name="food_court") for _ in range(200)]
+city_bowling = [FunPlaces(type_name="bowling") for _ in range(100)]
+city_fun_places = city_cinema + city_food_court + city_bowling
 ############# Все места города ###################
 all_city_places = city_fun_places + city_shops + city_works + city_transport
 print("all_city_places=", all_city_places)
 ############# Население ###################
-# human1 = Citizen(number=1, work_type="school", env=env)
-# env.process(human1.run())
-# human2 = Citizen(number=2, work_type="office", env=env)
-# env.process(human2.run())
-# human3 = Citizen(number=3, work_type="office", env=env)
-# human3.health_status = "infected"
-# env.process(human3.run())
-# human4 = Citizen(number=4, work_type="office", env=env)
-# env.process(human4.run())
-# human5 = Citizen(number=5, work_type="office", env=env)
-# env.process(human5.run())
-# human6 = Citizen(number=6, work_type="office", env=env)
-# env.process(human6.run())
-# city_humans = [human1, human2, human3, human4, human5, human6]
 city_works_string = [city_work.type_name for city_work in city_works]
 city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in range(TOTAL_NUMBER_OF_CITIZENS)]
 for _ in range(5):
