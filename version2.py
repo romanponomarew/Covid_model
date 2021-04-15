@@ -33,9 +33,13 @@ class Citizen:
         self.in_hospital = False
         # self.location = "work"  # shop/fun_places/public_transport/hospital
         self.work = work_type  # office
+
+        # Скорее всего, можно убрать
         for work_building in city_works:
             if self.work == work_building.type_name:
                 self.work_building = work_building.fullness_of_people
+
+        self.work_location = random.choice(city_works)  # Always same work for one person
         self.days_before_moving_to_hospital = 0
         self.days_staying_in_hospital = 0
 
@@ -49,14 +53,26 @@ class Citizen:
         :return:
         """
         # print("-----------")
-        # print(f"Person({self.number}) is at work now, simulation time-{self.env.now}")
+        #     # print(f"Person({self.number}) is at work now, simulation time-{self.env.now}")
+        self.contacts_between_people(location=self.work_location)
         health_status = self.health_status
+        self.work_location.people_in_building_now.append(self)
         self.work_building[health_status] += 1
         yield self.env.timeout(9)
         self.work_building[health_status] -= 1
         # print(f"Person({self.number}) finished work, simulation time-{env.now}")
+        self.work_location.people_in_building_now.remove(self)
         self.activity_for_day["work"] = True
         # print("+++++++++++")
+
+    def contacts_between_people(self, location):
+        for people in location.people_in_building_now:
+            if self.health_status == "healthy":
+                if people.health_status == "infected":
+                    self.chance_to_infected(infected_man=people)
+            elif self.health_status == "infected":
+                if people.health_status == "healthy":
+                    people.chance_to_infected(infected_man=self)
 
     def go_to_sleep(self):
         """
@@ -79,6 +95,7 @@ class Citizen:
         """
         # print("-----------")
         public_transport_now = random.choice(city_transport)
+        self.contacts_between_people(location=public_transport_now)
         health_status = self.health_status
         # print(f"Person({self.number}) is on public transport now, simulation time-{env.now}")
         public_transport_now.fullness_of_people[health_status] += 1
@@ -98,6 +115,7 @@ class Citizen:
         """
         # print("-----------")
         shop_now = random.choice(city_shops)
+        self.contacts_between_people(location=shop_now)
         health_status = self.health_status
         # print(f"Person({self.number}) is on shop now, simulation time-{env.now}")
         shop_now.fullness_of_people[health_status] += 1
@@ -118,6 +136,7 @@ class Citizen:
         """
         # print("-----------")
         fun_place_now = random.choice(city_fun_places)
+        self.contacts_between_people(location=fun_place_now)
         # print(f"Person({self.number})in a shopping center (cinema, etc.) now, simulation time-{env.now}")
         time_for_fun = random.uniform(1, 2.5)
         health_status = self.health_status
@@ -138,11 +157,11 @@ class Citizen:
         # print(f"Healthy person({self.number}) wearing mask? - ({self.wearing_mask})")
         # print(f"Sick person({infected_man.number}) wearing mask? - ({infected_man.wearing_mask})")
         if self.wearing_mask or infected_man.wearing_mask:
-            chance = 6
+            chance = 4
             if self.wearing_mask and infected_man.wearing_mask:
-                chance = 3
+                chance = 2
         else:
-            chance = 10
+            chance = 7
         # print(f"Person ({self.number}) can get infected from person ({infected_man.number}) with probability = {chance}")
         probability = random.randint(0, 101)
         # self.health_status = random.choices(["healthy", "infected"], weights=[100, 100 - probability])
@@ -150,6 +169,8 @@ class Citizen:
             self.health_status = "infected"
             self.days_before_moving_to_hospital = random.randint(3, 15)  # Choosing the number of
             # days before hospitalization
+
+
 
     def run(self):
         global current_time
@@ -321,58 +342,6 @@ def calendar(env):
             cprint("=" * 25 + f"Next day №{count_days}" + "=" * 25, "green")
 
 
-# def location_checking(
-#         env):
-#     count_checking_work = 0
-#     while True:
-#         # print(f"Call function location_checking in time ({env.now})")
-#         time_for_checking = 1
-#         for location in all_city_places:
-#             if isinstance(location, Work):
-#                 count_checking_work += 1
-#                 if count_checking_work <= 20:
-#                     continue
-#                 else:
-#                     # print("Checking work locations")
-#                     count_checking_work = 0
-#                     # Checking the number of people at work places every 2 hours
-#             quantity_of_people = sum(location.fullness_of_people.values())
-#             # print(f"In location ({location}) now(time={env.now}) number of people = {quantity_of_people}")
-#             if quantity_of_people > 1:
-#                 cprint("=" * 25 + f"Crowd of people({quantity_of_people}) in location {location}" + "=" * 25,
-#                        "yellow")
-#                 cprint(
-#                     "\t" + f"Amount of them ({location.fullness_of_people['healthy']}) healthy people in {location.type_name}",
-#                     "yellow")
-#                 cprint(
-#                     "\t" + f"Amount of them ({location.fullness_of_people['infected']}) sick people in {location.type_name}",
-#                     "yellow")
-#                 if location.fullness_of_people['infected'] > 0:
-#                     cprint(
-#                         "\t" + f"Location {location.type_name} have sick people({location.fullness_of_people['infected']}) !!!",
-#                         "red")
-#                     if len(location.people_in_building_now) > 0:
-#                         while True:
-#                             people = random.choice(location.people_in_building_now)
-#                             if people.health_status == "infected":
-#                                 infected_man = people
-#                                 break
-#                             else:
-#                                 continue
-#                         # else:
-#                         #     return
-#
-#                         for people in location.people_in_building_now:
-#                             # print(f"Person({people.number}), status-({people.health_status}) in location({location.type_name}) with sick people")
-#                             if people.health_status != "infected" and people.antibodies == False:
-#                                 # print(
-#                                 #     f"Person({people.number}), status-({people.health_status}) in location({location.type_name}) with sick people")
-#                                 people.chance_to_infected(infected_man=infected_man)
-#                                 # print(
-#                                 #     f"Healthy person({people.number}) could get sick. Now his status=({people.health_status})")
-#
-#         yield env.timeout(time_for_checking)  # Checking every 20 minutes
-
 
 ##########################
 # env = simpy.Environment()
@@ -400,7 +369,7 @@ city_bowling = [FunPlaces(type_name="bowling") for _ in range(100)]
 city_fun_places = city_cinema + city_food_court + city_bowling
 ############# All places of city ###################
 all_city_places = city_fun_places + city_shops + city_works + city_transport
-print("all_city_places=", all_city_places)
+# print("all_city_places=", all_city_places)
 ############# Population ###################
 city_works_string = [city_work.type_name for city_work in city_works]
 city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in
