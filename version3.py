@@ -67,13 +67,26 @@ class Citizen:
         # print("+++++++++++")
 
     def contacts_between_people(self, location):
+        """
+        If location have more than 5 person -> new person in location contacts with only 5 random person
+        """
+        count_of_contacts = 0
         for people in location.people_in_building_now:
+            if count_of_contacts > 5:
+                return
+            random_person = people
+            if len(location.people_in_building_now) > 5:
+                random_person = random.choice(location.people_in_building_now)
+                count_of_contacts += 1
+
             if self.health_status == "healthy":
-                if people.health_status == "infected":
-                    self.chance_to_infected(infected_man=people)
+                if random_person.health_status == "infected":
+                    self.chance_to_infected(infected_man=random_person)
             elif self.health_status == "infected":
-                if people.health_status == "healthy":
-                    people.chance_to_infected(infected_man=self)
+                if random_person.health_status == "healthy":
+                    random_person.chance_to_infected(infected_man=self)
+
+
 
     def go_to_sleep(self):
         """
