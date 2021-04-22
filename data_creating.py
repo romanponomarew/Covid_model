@@ -15,8 +15,8 @@ for person in range(1, TOTAL_NUMBER_OF_CITIZENS):
         "health_status": "healthy",
         "antibodies": False,
         "in_hospital": False,
-        "wearing_mask": True,
-        "work_location": random.randint(1, TOTAL_NUMBER_OF_WORKS),
+        "wearing_mask": False,
+        "work_location": random.randint(1, TOTAL_NUMBER_OF_WORKS-10),
         "days_before_moving_to_hospital": 0,
         "days_staying_in_hospital": 0,
          }
@@ -31,6 +31,8 @@ for person in city_statistics:
     if person != "day":
         if city_statistics[person]["health_status"] == "infected":
             count += 1
+        if random.randint(1, 2) == 1:
+            city_statistics[person]["wearing_mask"] = True
 print(count)
 
 

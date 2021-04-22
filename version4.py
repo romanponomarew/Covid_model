@@ -12,7 +12,7 @@ RECOVERY_DAYS = [15, 45]  # Time spent in the hospital
 WEEKS = 6  # Simulation time in weeks
 SIM_TIME = WEEKS * 7 * 24  # Simulation time in minutes
 time_of_day = "day"  # night
-count_days = 1
+# count_days = 1
 current_time = 0
 time_now = 0
 city_statisitics = defaultdict()
@@ -28,13 +28,17 @@ def get_population_data():
     :return:
     """
     # Метод считывания графа из файла .json
-    with open("population_data.json", 'r', encoding='utf-8') as fh:  # открываем файл на чтение
+    with open("population_data(1).json", 'r', encoding='utf-8') as fh:  # открываем файл на чтение
         city_data = json.load(fh)  # загружаем из файла данные в словарь graph
     # print("GRAPH=", city_data)
     return city_data
 
 city_data = get_population_data()
 print(len(city_data))
+count_days = city_data["day"]
+print("count_days=", count_days)
+count_days += 1
+
 
 
 class Citizen:
@@ -42,13 +46,16 @@ class Citizen:
         self.number = number
         self.env = env
         # The probability of wearing a mask = 50%:
-        if random.randint(1, 2) == 1:
-            self.wearing_mask = True
-        else:
-            self.wearing_mask = False
-        self.health_status = "healthy"  # infected
-        self.antibodies = False  # If you have been ill(True), you cannot get sick more
-        self.in_hospital = False
+        # if random.randint(1, 2) == 1:
+        #     self.wearing_mask = True
+        # else:
+        #     self.wearing_mask = False
+
+        self.wearing_mask = city_data[str(self.number)]["wearing_mask"]
+        # self.health_status = "healthy"  # infected
+        self.health_status = city_data[str(self.number)]["health_status"]
+        self.antibodies = city_data[str(self.number)]["antibodies"]  # If you have been ill(True), you cannot get sick more
+        self.in_hospital = city_data[str(self.number)]["in_hospital"]
         # self.location = "work"  # shop/fun_places/public_transport/hospital
         self.work = work_type  # office
 
@@ -57,9 +64,11 @@ class Citizen:
             if self.work == work_building.type_name:
                 self.work_building = work_building.fullness_of_people
 
-        self.work_location = random.choice(city_works)  # Always same work for one person
-        self.days_before_moving_to_hospital = 0
-        self.days_staying_in_hospital = 0
+        # self.work_location = random.choice(city_works)  # Always same work for one person
+        self.work_location_number = city_data[str(self.number)]["work_location"]
+        self.work_location = city_works[self.work_location_number]  # Always same work for one person
+        self.days_before_moving_to_hospital = city_data[str(self.number)]["days_before_moving_to_hospital"]
+        self.days_staying_in_hospital = city_data[str(self.number)]["days_staying_in_hospital"]
 
         self.sleep_now = False
         self.activity_for_day = {"road_to_work": False, "work": False, "road_from_work": False, "shop": False,
@@ -338,6 +347,26 @@ def checking_hospital():
         f"Among them {city_statisitics[f'Day№{count_days}']['healthy']} are healthy,"
         f"Among them {city_statisitics[f'Day№{count_days}']['infected'] - city_statisitics[f'Day№{count_days}']['people_in_hospital']} are sick,"
         f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people", "green")
+
+    population_statistics = dict()
+    population_statistics["day"] = count_days
+    for person in city_humans:
+        population_statistics[str(person.number)] = \
+            {
+                "health_status": person.health_status,
+                "antibodies": person.antibodies,
+                "in_hospital": person.in_hospital,
+                "wearing_mask": person.wearing_mask,
+                "work_location": person.work_location_number,
+                "days_before_moving_to_hospital": person.days_before_moving_to_hospital,
+                "days_staying_in_hospital": person.days_staying_in_hospital,
+            }
+
+    # pprint(population_statistics)
+    with open("population_data(1).json", "w", encoding="utf-8", ) as file:
+        json.dump(population_statistics, file, ensure_ascii=False)
+
+
     with open("test.txt", mode="a") as file:
         file.write(
             f"In day №{count_days} in the city there are {city_statisitics[f'Day№{count_days}']['total_people_in_city']} people, "
@@ -345,6 +374,7 @@ def checking_hospital():
             f"Among them {city_statisitics[f'Day№{count_days}']['infected'] - city_statisitics[f'Day№{count_days}']['people_in_hospital']} are sick,"
             f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people" + "\n")
 
+    raise SystemExit
 
 def calendar(env):
     global time_now
@@ -399,7 +429,7 @@ all_city_places = city_fun_places + city_shops + city_works + city_transport
 ############# Population ###################
 city_works_string = [city_work.type_name for city_work in city_works]
 city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in
-               range(TOTAL_NUMBER_OF_CITIZENS)]
+               range(1, TOTAL_NUMBER_OF_CITIZENS)]
 for _ in range(5):
     random_person = random.choice(city_humans)
     random_person.health_status = "infected"
