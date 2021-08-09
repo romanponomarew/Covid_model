@@ -55,18 +55,14 @@ class Citizen:
         Stays at work 9 hours
         :return:
         """
-        # print("-----------")
-        #     # print(f"Person({self.number}) is at work now, simulation time-{self.env.now}")
         self.contacts_between_people(location=self.work_location)
         health_status = self.health_status
         self.work_location.people_in_building_now.append(self)
         self.work_building[health_status] += 1
         yield self.env.timeout(9)
         self.work_building[health_status] -= 1
-        # print(f"Person({self.number}) finished work, simulation time-{env.now}")
         self.work_location.people_in_building_now.remove(self)
         self.activity_for_day["work"] = True
-        # print("+++++++++++")
 
     def contacts_between_people(self, location):
         """
@@ -91,75 +87,56 @@ class Citizen:
         Sleep for 9 часов
         :return:
         """
-        # print("-----------")
-        # print(f"Person({self.number}) goes to sleep, simulation time-{self.env.now}")
         self.sleep_now = True
         yield self.env.timeout(9)
         self.sleep_now = False
-        # print(f"Person({self.number}) finished sleeping, simulation time-{env.now}")
         self.activity_for_day["sleep"] = True
-        # print("+++++++++++")
 
     def use_public_transport(self):
         """
         Located in public transport from 30 minutes to 1.5 hours
         :return:
         """
-        # print("-----------")
         public_transport_now = random.choice(city_transport)
         self.contacts_between_people(location=public_transport_now)
         health_status = self.health_status
-        # print(f"Person({self.number}) is on public transport now, simulation time-{env.now}")
         public_transport_now.fullness_of_people[health_status] += 1
         public_transport_now.people_in_building_now.append(self)
         travel_time = random.uniform(0.5, 1.5)
-        # print(f"Travel time of person({self.number}) = {travel_time}")
         yield self.env.timeout(travel_time)
         public_transport_now.fullness_of_people[health_status] -= 1
         public_transport_now.people_in_building_now.remove(self)
-        # print(f"Person({self.number}) left public transport, simulation time-{env.now}")
-        # print("+++++++++++")
 
     def go_to_shop(self):
         """
         Located in the shop from 10 minutes to 1.5 hours
         :return:
         """
-        # print("-----------")
         shop_now = random.choice(city_shops)
         self.contacts_between_people(location=shop_now)
         health_status = self.health_status
-        # print(f"Person({self.number}) is on shop now, simulation time-{env.now}")
         shop_now.fullness_of_people[health_status] += 1
         shop_now.people_in_building_now.append(self)
         time_for_shopping = random.uniform(0.16, 1.5)
-        # print(f"Person({self.number}) spent in shop time - {time_for_shopping}")
         yield self.env.timeout(time_for_shopping)
         shop_now.fullness_of_people[health_status] -= 1
         shop_now.people_in_building_now.remove(self)
         self.activity_for_day["shop"] = True
-        # print(f"Person({self.number}) left shop, simulation time-{env.now}")
-        # print("+++++++++++")
 
     def go_to_fun_places(self):
         """
         Located in the cinema, restaurant, etc from 1 hour to 2.5 hours
         :return:
         """
-        # print("-----------")
         fun_place_now = random.choice(city_fun_places)
         self.contacts_between_people(location=fun_place_now)
-        # print(f"Person({self.number})in a shopping center (cinema, etc.) now, simulation time-{env.now}")
         time_for_fun = random.uniform(1, 2.5)
         health_status = self.health_status
         fun_place_now.fullness_of_people[health_status] += 1
         fun_place_now.people_in_building_now.append(self)
-        # print(f"Person({self.number}) spent in a shopping center (cinema, etc.) time - {time_for_fun}")
         yield self.env.timeout(time_for_fun)
         fun_place_now.fullness_of_people[health_status] -= 1
         fun_place_now.people_in_building_now.remove(self)
-        # print(f"Person({self.number}) left shopping center (cinema, etc.), simulation time-{env.now}")
-        # print("+++++++++++")
 
     def chance_to_infected(self, infected_man):
         """
@@ -176,16 +153,11 @@ class Citizen:
         if probability < chance:
             self.health_status = "infected"
             self.days_before_moving_to_hospital = random.randint(3, 15)  # Choosing the number of
-            # days before hospitalization
 
     def run(self):
         global current_time
         if self.in_hospital is not True:
             if not self.sleep_now:
-
-                # if time_now == 7:  # Go to work and return from it
-                # start_time = self.env.now
-                # print(f"start_time(simulation time) of person№{self.number}=", start_time)
                 if not self.activity_for_day["sleep"]:
                     yield self.env.process(self.go_to_sleep())
                 if not self.activity_for_day["road_to_work"]:
@@ -243,8 +215,6 @@ class FunPlaces(Building):
 
     def __init__(self, type_name):
         super().__init__(type_name)
-        # self.type_name = type_name  # cinema, food_court, bowling
-
 
 class PublicTransport(Building):
     """
@@ -253,7 +223,6 @@ class PublicTransport(Building):
 
     def __init__(self, type_name):
         super().__init__(type_name)
-        # self.type_of_transport = type_of_transport  # bus, metro
 
 
 def people_days_to_hospital(people):
@@ -365,13 +334,10 @@ def calendar(env):
 
     if time_now >= 22:
         print("Night has come, simulation time =", env.now)
-        # yield env.timeout(9)
         for people in city_humans:
             people_days_to_hospital(people)
             people_staying_in_hospital(people)
-            # checking_health(people)
         checking_hospital()
-        # count_days += 1
         cprint("=" * 25 + f"Next day №{count_days}" + "=" * 25, "green")
 
 
@@ -401,8 +367,6 @@ all_city_places = city_fun_places + city_shops + city_works + city_transport
 city_works_string = [city_work.type_name for city_work in city_works]
 
 ############# Processes ###################
-
-# env.process(location_checking(env))
 
 statistics_of_humans = {}
 
