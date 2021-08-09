@@ -10,15 +10,32 @@ from pprint import pprint
 import simpy
 from termcolor import cprint
 
-# INPUT PARAMETERS:
+### INPUT PARAMETERS FROM JSON:
 TOTAL_NUMBER_OF_CITIZENS = 10000
+SIMULATING_DAYS = 365
+NUMBER_OF_INFECTED_PEOPLE = 5  # The number of initially infected people
+SIM_TIME = SIMULATING_DAYS * 24  # Simulation time in minutes
 DAYS_BEFORE_HOSPITALIZATION = [3, 15]
 RECOVERY_DAYS = [15, 45]  # Time spent in the hospital
-WEEKS = 52  # Simulation time in weeks
-SIM_TIME = WEEKS * 7 * 24  # Simulation time in minutes
-TRAVEL_TIME = [0.5, 1.5]  # The range of travel time in transport
-
-
+TRAVEL_TIME = [0.5, 1.5]  # The average range of travel time in transport
+SHOPPING_TIME = [0.16, 1.5]  # The average range of travel time in transport
+FUN_TIME = [1, 2.5]  # The average time range of visiting entertainment places
+# The probability of transmitting the virus through contact between two people:
+CHANCE_TO_INFECTED_ONE_MASK = 3  # One in a mask, the other without
+CHANCE_TO_INFECTED_TWO_MASK = 1.5  # Both people in a mask
+CHANCE_TO_INFECTED_ZERO_MASK = 4  # Both people without masks
+####### NUMBER OF BUILDINGS IN THE CITY: ################
+NUMBER_OF_OFFICES = 4000
+NUMBER_OF_SCHOOLS = 2000
+NUMBER_OF_METRO_WORKS = 2000  # The number of jobs in the metro
+NUMBER_OF_BUS = 1500
+NUMBER_OF_METRO_WAGONS = 4000  # Number of train wagons in the metro
+NUMBER_OF_SHOP_PYATEROCHKA = 350  # Number of grocery stores of the brand 1
+NUMBER_OF_SHOP_MAGNIT = 250  # Number of grocery stores of the brand 2
+NUMBER_OF_SHOP_PEREKRESTOK = 200  # Number of grocery stores of the brand 3
+NUMBER_OF_CINEMAS = 150
+NUMBER_OF_FOOD_COURTS = 230
+NUMBER_OF_FOOD_BOWLING = 150
 
 time_of_day = "day"  # night
 count_days = 0
@@ -122,7 +139,7 @@ class Citizen:
         health_status = self.health_status
         shop_now.fullness_of_people[health_status] += 1
         shop_now.people_in_building_now.append(self)
-        time_for_shopping = random.uniform(0.16, 1.5)
+        time_for_shopping = random.uniform(SHOPPING_TIME[0], SHOPPING_TIME[1])
         yield self.env.timeout(time_for_shopping)
         shop_now.fullness_of_people[health_status] -= 1
         shop_now.people_in_building_now.remove(self)
@@ -135,7 +152,8 @@ class Citizen:
         """
         fun_place_now = random.choice(city_fun_places)
         self.contacts_between_people(location=fun_place_now)
-        time_for_fun = random.uniform(1, 2.5)
+
+        time_for_fun = random.uniform(FUN_TIME[0], FUN_TIME[1])
         health_status = self.health_status
         fun_place_now.fullness_of_people[health_status] += 1
         fun_place_now.people_in_building_now.append(self)
@@ -149,15 +167,16 @@ class Citizen:
         :return:
         """
         if self.wearing_mask or infected_man.wearing_mask:
-            chance = 3
+            chance = CHANCE_TO_INFECTED_ONE_MASK
             if self.wearing_mask and infected_man.wearing_mask:
-                chance = 1.5
+                chance = CHANCE_TO_INFECTED_TWO_MASK
         else:
-            chance = 4
+            chance = CHANCE_TO_INFECTED_ZERO_MASK
         probability = random.randint(0, 101)
         if probability < chance:
             self.health_status = "infected"
-            self.days_before_moving_to_hospital = random.randint(3, 15)  # Choosing the number of
+            # Choosing the number of days before hospitalization
+            self.days_before_moving_to_hospital = random.randint(3, 15)
 
     def run(self):
         global current_time
@@ -243,7 +262,7 @@ def people_days_to_hospital(people):
         print(f"person ({people.number}) is admitted to the hospital a day №{count_days}")
         people.days_before_moving_to_hospital -= 1
         people.in_hospital = True
-        people.days_staying_in_hospital = random.randint(15, 45)
+        people.days_staying_in_hospital = random.randint(RECOVERY_DAYS[0], RECOVERY_DAYS[1])
 
 
 def people_staying_in_hospital(people):
@@ -348,23 +367,23 @@ def calendar(env):
 
 
 ############# Work_places ###################
-office_works = [Work(type_name="office") for _ in range(4000)]
-school_works = [Work(type_name="school") for _ in range(2000)]
-metro_works = [Work(type_name="metro") for _ in range(2000)]
+office_works = [Work(type_name="office") for _ in range(NUMBER_OF_OFFICES)]
+school_works = [Work(type_name="school") for _ in range(NUMBER_OF_SCHOOLS)]
+metro_works = [Work(type_name="metro") for _ in range(NUMBER_OF_METRO_WORKS)]
 city_works = office_works + school_works + metro_works
 ############# Transport ###################
-transport_bus = [PublicTransport(type_name="bus") for _ in range(1500)]
-transport_metro = [PublicTransport(type_name="metro") for _ in range(4000)]
+transport_bus = [PublicTransport(type_name="bus") for _ in range(NUMBER_OF_BUS)]
+transport_metro = [PublicTransport(type_name="metro") for _ in range(NUMBER_OF_METRO_WAGONS)]
 city_transport = transport_bus + transport_metro
 ############# Shops ###################
-shop_pyaterochka = [Shop(type_name="Пятерочка") for _ in range(350)]
-shop_magnit = [Shop(type_name="Магнит") for _ in range(250)]
-shop_perekrestok = [Shop(type_name="Перекресток") for _ in range(200)]
+shop_pyaterochka = [Shop(type_name="Пятерочка") for _ in range(NUMBER_OF_SHOP_PYATEROCHKA)]
+shop_magnit = [Shop(type_name="Магнит") for _ in range(NUMBER_OF_SHOP_MAGNIT)]
+shop_perekrestok = [Shop(type_name="Перекресток") for _ in range(NUMBER_OF_SHOP_PEREKRESTOK)]
 city_shops = shop_magnit + shop_perekrestok + shop_pyaterochka
 ############# Fun places ###################
-city_cinema = [FunPlaces(type_name="cinema") for _ in range(150)]
-city_food_court = [FunPlaces(type_name="food_court") for _ in range(230)]
-city_bowling = [FunPlaces(type_name="bowling") for _ in range(150)]
+city_cinema = [FunPlaces(type_name="cinema") for _ in range(NUMBER_OF_CINEMAS)]
+city_food_court = [FunPlaces(type_name="food_court") for _ in range(NUMBER_OF_FOOD_COURTS)]
+city_bowling = [FunPlaces(type_name="bowling") for _ in range(NUMBER_OF_FOOD_BOWLING)]
 city_fun_places = city_cinema + city_food_court + city_bowling
 ############# All places of city ###################
 all_city_places = city_fun_places + city_shops + city_works + city_transport
@@ -376,17 +395,18 @@ city_works_string = [city_work.type_name for city_work in city_works]
 
 statistics_of_humans = {}
 
-for day in range(1, 366):
+for day in range(1, SIMULATING_DAYS):
     count_days = day
     env = simpy.rt.RealtimeEnvironment(initial_time=0, factor=0.001, strict=False)
 
     city_humans = [Citizen(number=i, work_type=random.choice(city_works_string), env=env) for i in
                    range(TOTAL_NUMBER_OF_CITIZENS)]
     if statistics_of_humans == {}:
-        for _ in range(5):
+        for _ in range(NUMBER_OF_INFECTED_PEOPLE):
             random_person = random.choice(city_humans)
             random_person.health_status = "infected"
-            random_person.days_before_moving_to_hospital = random.randint(3, 15)
+            random_person.days_before_moving_to_hospital = random.randint(DAYS_BEFORE_HOSPITALIZATION[0],
+                                                                          DAYS_BEFORE_HOSPITALIZATION[2])
     else:
         for human in city_humans:
             human.health_status = statistics_of_humans[str(human.number)]["health_status"]
