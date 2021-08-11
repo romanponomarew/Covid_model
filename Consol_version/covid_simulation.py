@@ -6,37 +6,42 @@
 import random
 from collections import defaultdict
 from pprint import pprint
-
+import json
 import simpy
 from termcolor import cprint
+import matplotlib.pyplot as plt
+
+with open("data_file.json", "r") as read_file:
+    input_parameters = json.load(read_file)
 
 ### INPUT PARAMETERS FROM JSON:
-TOTAL_NUMBER_OF_CITIZENS = 10000
-SIMULATING_DAYS = 365
-NUMBER_OF_INFECTED_PEOPLE = 5  # The number of initially infected people
-SIM_TIME = SIMULATING_DAYS * 24  # Simulation time in minutes
-DAYS_BEFORE_HOSPITALIZATION = [3, 15]
-RECOVERY_DAYS = [15, 45]  # Time spent in the hospital
-TRAVEL_TIME = [0.5, 1.5]  # The average range of travel time in transport
-SHOPPING_TIME = [0.16, 1.5]  # The average range of travel time in transport
-FUN_TIME = [1, 2.5]  # The average time range of visiting entertainment places
+TOTAL_NUMBER_OF_CITIZENS = input_parameters["number_of_citizen"]
+SIMULATING_DAYS = input_parameters["simulating_days"]
+NUMBER_OF_INFECTED_PEOPLE = input_parameters["number_of_infected_people"]  # The number of initially infected people
+DAYS_BEFORE_HOSPITALIZATION = input_parameters["days_before_hospitalization"]
+RECOVERY_DAYS = input_parameters["recovery_days"]  # Time spent in the hospital
+TRAVEL_TIME = input_parameters["travel_time"]  # The average range of travel time in transport
+SHOPPING_TIME = input_parameters["shopping_time"]  # The average range of travel time in transport
+FUN_TIME = input_parameters["fun_time"]  # The average time range of visiting entertainment places
 # The probability of transmitting the virus through contact between two people:
-CHANCE_TO_INFECTED_ONE_MASK = 3  # One in a mask, the other without
-CHANCE_TO_INFECTED_TWO_MASK = 1.5  # Both people in a mask
-CHANCE_TO_INFECTED_ZERO_MASK = 4  # Both people without masks
+CHANCE_TO_INFECTED_ONE_MASK = input_parameters["chance_to_infected_one_mask"]  # One in a mask, the other without
+CHANCE_TO_INFECTED_TWO_MASK = input_parameters["chance_to_infected_two_mask"]  # Both people in a mask
+CHANCE_TO_INFECTED_ZERO_MASK = input_parameters["chance_to_infected_zero_mask"]  # Both people without masks
 ####### NUMBER OF BUILDINGS IN THE CITY: ################
-NUMBER_OF_OFFICES = 4000
-NUMBER_OF_SCHOOLS = 2000
-NUMBER_OF_METRO_WORKS = 2000  # The number of jobs in the metro
-NUMBER_OF_BUS = 1500
-NUMBER_OF_METRO_WAGONS = 4000  # Number of train wagons in the metro
-NUMBER_OF_SHOP_PYATEROCHKA = 350  # Number of grocery stores of the brand 1
-NUMBER_OF_SHOP_MAGNIT = 250  # Number of grocery stores of the brand 2
-NUMBER_OF_SHOP_PEREKRESTOK = 200  # Number of grocery stores of the brand 3
-NUMBER_OF_CINEMAS = 150
-NUMBER_OF_FOOD_COURTS = 230
-NUMBER_OF_FOOD_BOWLING = 150
+NUMBER_OF_OFFICES = input_parameters["number_of_offices"]
+NUMBER_OF_SCHOOLS = input_parameters["number_of_schools"]
+NUMBER_OF_METRO_WORKS = input_parameters["number_of_metro_works"]  # The number of jobs in the metro
+NUMBER_OF_BUS = input_parameters["number_of_bus"]
+NUMBER_OF_METRO_WAGONS = input_parameters["number_of_metro_wagons"]  # Number of train wagons in the metro
+NUMBER_OF_SHOP_PYATEROCHKA = input_parameters["number_of_shop_pyaterochka"]  # Number of grocery stores of the brand 1
+NUMBER_OF_SHOP_MAGNIT = input_parameters["number_of_shop_magnit"]  # Number of grocery stores of the brand 2
+NUMBER_OF_SHOP_PEREKRESTOK = input_parameters["number_of_shop_perekrestok"]  # Number of grocery stores of the brand 3
+NUMBER_OF_CINEMAS = input_parameters["number_of_cinemas"]
+NUMBER_OF_FOOD_COURTS = input_parameters["number_of_food_courts"]
+NUMBER_OF_BOWLING = input_parameters["number_of_bowling"]
 
+
+SIM_TIME = SIMULATING_DAYS * 24  # Simulation time in minutes
 time_of_day = "day"  # night
 count_days = 0
 current_time = 0
@@ -383,7 +388,7 @@ city_shops = shop_magnit + shop_perekrestok + shop_pyaterochka
 ############# Fun places ###################
 city_cinema = [FunPlaces(type_name="cinema") for _ in range(NUMBER_OF_CINEMAS)]
 city_food_court = [FunPlaces(type_name="food_court") for _ in range(NUMBER_OF_FOOD_COURTS)]
-city_bowling = [FunPlaces(type_name="bowling") for _ in range(NUMBER_OF_FOOD_BOWLING)]
+city_bowling = [FunPlaces(type_name="bowling") for _ in range(NUMBER_OF_BOWLING)]
 city_fun_places = city_cinema + city_food_court + city_bowling
 ############# All places of city ###################
 all_city_places = city_fun_places + city_shops + city_works + city_transport
@@ -406,7 +411,7 @@ for day in range(1, SIMULATING_DAYS):
             random_person = random.choice(city_humans)
             random_person.health_status = "infected"
             random_person.days_before_moving_to_hospital = random.randint(DAYS_BEFORE_HOSPITALIZATION[0],
-                                                                          DAYS_BEFORE_HOSPITALIZATION[2])
+                                                                          DAYS_BEFORE_HOSPITALIZATION[1])
     else:
         for human in city_humans:
             human.health_status = statistics_of_humans[str(human.number)]["health_status"]
@@ -435,3 +440,48 @@ for day in range(1, SIMULATING_DAYS):
         statistics_of_humans[str(human.number)]["days_staying_in_hospital"] = human.days_staying_in_hospital
 
 pprint(city_statisitics)
+
+day_counts = [i for i in range(1, SIMULATING_DAYS + 1)]
+print("day_counts=", day_counts)
+healthy_counts = []
+illness_counts = []
+hospital_counts = []
+
+with open("test(2).txt", "r") as file:
+    for line in file:
+        line = line.strip()
+        print(line)
+        numbers = [int(x) for x in line.split() if x.isdigit()]
+        print(numbers)
+        healthy_counts.append(numbers[1])
+        illness_counts.append(numbers[2])
+        hospital_counts.append(numbers[3])
+
+x = day_counts
+y1 = healthy_counts
+y2 = illness_counts
+y3 = hospital_counts
+
+plt.title("COVID-19 Simulation")
+plt.xlabel("Days")
+plt.ylabel("y1, y2")
+plt.grid()
+plt.plot(x, y1, x, y2, x, y3)
+
+fig, ax = plt.subplots()
+
+ax.plot(x, y1, label='Healthy people')
+ax.plot(x, y2, label='Infected people')
+ax.plot(x, y3, label='People in hospital')
+
+ax.legend()
+
+fig.set_figheight(5)
+fig.set_figwidth(8)
+
+# plt.show()
+
+plt.savefig('saved_figure.png')
+
+
+# plt.savefig('saved_figure.png')
