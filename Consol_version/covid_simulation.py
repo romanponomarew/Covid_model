@@ -5,10 +5,8 @@
 
 import random
 from collections import defaultdict
-from pprint import pprint
 import json
 import simpy
-from termcolor import cprint
 
 with open("data_file.json", "r") as read_file:
     input_parameters = json.load(read_file)
@@ -302,11 +300,11 @@ def checking_hospital():
         city_statisitics[f"Day№{count_days}"][people.health_status] += 1
         if people.in_hospital:
             city_statisitics[f"Day№{count_days}"]["people_in_hospital"] += 1
-    cprint(
+    print(
         f"In day №{count_days} in the city there are {city_statisitics[f'Day№{count_days}']['total_people_in_city']} people, "
         f"Among them {city_statisitics[f'Day№{count_days}']['healthy']} are healthy,"
         f"Among them {city_statisitics[f'Day№{count_days}']['infected'] - city_statisitics[f'Day№{count_days}']['people_in_hospital']} are sick,"
-        f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people", "green")
+        f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people")
     with open("test(2).txt", mode="a") as file:
         file.write(
             f"In day №{count_days} in the city there are {city_statisitics[f'Day№{count_days}']['total_people_in_city']} people, "
@@ -333,23 +331,16 @@ def checking_health(people):
     if people.in_hospital:
         city_statisitics[f"Day№{count_days}"]["people_in_hospital"] += 1
 
-    cprint(
+    print(
         f"In day №{count_days} in the city there are {city_statisitics[f'Day№{count_days}']['total_people_in_city']} people, "
         f"Among them {city_statisitics[f'Day№{count_days}']['healthy']} are healthy,"
         f"Among them {city_statisitics[f'Day№{count_days}']['infected'] - city_statisitics[f'Day№{count_days}']['people_in_hospital']} are sick,"
-        f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people", "green")
-    with open("test(2).txt", mode="a") as file:
-        file.write(
-            f"In day №{count_days} in the city there are {city_statisitics[f'Day№{count_days}']['total_people_in_city']} people, "
-            f"Among them {city_statisitics[f'Day№{count_days}']['healthy']} are healthy,"
-            f"Among them {city_statisitics[f'Day№{count_days}']['infected'] - city_statisitics[f'Day№{count_days}']['people_in_hospital']} are sick,"
-            f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people" + "\n")
-
+        f"In hospital now {city_statisitics[f'Day№{count_days}']['people_in_hospital']} people")
 
 def calendar(env):
     global time_now
     global count_days
-    cprint("=" * 25 + f"Day №{count_days}" + "=" * 25, "green")
+    print("=" * 25 + f"Day №{count_days}" + "=" * 25)
 
     if count_days == 1:
         print("Statistics in the beginning of day:")
