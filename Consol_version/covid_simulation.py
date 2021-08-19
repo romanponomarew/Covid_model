@@ -9,7 +9,6 @@ from pprint import pprint
 import json
 import simpy
 from termcolor import cprint
-import matplotlib.pyplot as plt
 
 with open("data_file.json", "r") as read_file:
     input_parameters = json.load(read_file)
@@ -350,10 +349,9 @@ def checking_health(people):
 def calendar(env):
     global time_now
     global count_days
-    cprint("=" * 25 + f"Day №1" + "=" * 25, "green")
+    cprint("=" * 25 + f"Day №{count_days}" + "=" * 25, "green")
 
     if count_days == 1:
-        cprint("=" * 25 + f"Day №1" + "=" * 25, "green")
         print("Statistics in the beginning of day:")
         checking_hospital()
     print("Now 7 am of morning, simulation time=", env.now)
@@ -368,7 +366,7 @@ def calendar(env):
             people_days_to_hospital(people)
             people_staying_in_hospital(people)
         checking_hospital()
-        cprint("=" * 25 + f"Next day №{count_days}" + "=" * 25, "green")
+
 
 
 ############# Work_places ###################
@@ -438,50 +436,3 @@ for day in range(1, SIMULATING_DAYS):
         statistics_of_humans[str(human.number)]["work_location"] = human.work_location
         statistics_of_humans[str(human.number)]["days_before_moving_to_hospital"] = human.days_before_moving_to_hospital
         statistics_of_humans[str(human.number)]["days_staying_in_hospital"] = human.days_staying_in_hospital
-
-pprint(city_statisitics)
-
-day_counts = [i for i in range(1, SIMULATING_DAYS + 1)]
-print("day_counts=", day_counts)
-healthy_counts = []
-illness_counts = []
-hospital_counts = []
-
-with open("test(2).txt", "r") as file:
-    for line in file:
-        line = line.strip()
-        print(line)
-        numbers = [int(x) for x in line.split() if x.isdigit()]
-        print(numbers)
-        healthy_counts.append(numbers[1])
-        illness_counts.append(numbers[2])
-        hospital_counts.append(numbers[3])
-
-x = day_counts
-y1 = healthy_counts
-y2 = illness_counts
-y3 = hospital_counts
-
-plt.title("COVID-19 Simulation")
-plt.xlabel("Days")
-plt.ylabel("y1, y2")
-plt.grid()
-plt.plot(x, y1, x, y2, x, y3)
-
-fig, ax = plt.subplots()
-
-ax.plot(x, y1, label='Healthy people')
-ax.plot(x, y2, label='Infected people')
-ax.plot(x, y3, label='People in hospital')
-
-ax.legend()
-
-fig.set_figheight(5)
-fig.set_figwidth(8)
-
-# plt.show()
-
-plt.savefig('saved_figure.png')
-
-
-# plt.savefig('saved_figure.png')
